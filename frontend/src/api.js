@@ -53,6 +53,31 @@ export const fetchApplications = (token, role) => {
   );
 };
 
+export const updateProfile = (token, payload) =>
+  fetch(`${baseUrl}/auth/me`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  }).then(parseJson);
+
+export const fetchUsers = (token) =>
+  fetch(`${baseUrl}/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then(parseJson);
+
+export const updateUser = (token, id, payload) =>
+  fetch(`${baseUrl}/users/${id}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  }).then(parseJson);
+
 export const applyToOpportunity = (token, formData) =>
   fetch(`${baseUrl}/applications/apply`, {
     method: "POST",

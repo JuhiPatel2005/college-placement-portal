@@ -18,6 +18,9 @@ const sanitizeUser = (user) => ({
   branch: user.branch,
   passingYear: user.passingYear,
   college: user.college,
+  companyName: user.companyName,
+  companyWebsite: user.companyWebsite,
+  companyDescription: user.companyDescription,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -33,7 +36,16 @@ exports.register = async (req, res) => {
       branch,
       passingYear,
       college,
+      companyName,
+      companyWebsite,
+      companyDescription,
     } = req.body;
+
+    if (!name || !email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Name, email, and password are required" });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -51,6 +63,9 @@ exports.register = async (req, res) => {
       branch,
       passingYear,
       college,
+      companyName,
+      companyWebsite,
+      companyDescription,
     });
 
     const token = createToken(user);
@@ -87,6 +102,41 @@ exports.getMe = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    res.json(sanitizeUser(user));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.updateMe = async (req, res) => {
+  try {
+    const updates = {};
+    const allowedFields = [
+      "name",
+      "year",
+      "branch",
+      "passingYear",
+      "college",
+      "companyName",
+      "companyWebsite",
+      "companyDescription",
+    ];
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     res.json(sanitizeUser(user));
   } catch (error) {
     res.status(500).json({ error: error.message });

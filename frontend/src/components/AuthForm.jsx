@@ -20,27 +20,42 @@ function AuthForm({ mode, authData, onModeChange, onChange, onSubmit }) {
               <option value="student">Student</option>
               <option value="company">Company</option>
               <option value="tpo">TPO</option>
+              <option value="superadmin">Superadmin</option>
             </select>
-            <div className="grid-2">
-              <label>
-                Year
-                <input name="year" value={authData.year} onChange={onChange} />
-              </label>
-              <label>
-                Branch
-                <input name="branch" value={authData.branch} onChange={onChange} />
-              </label>
-            </div>
-            <div className="grid-2">
-              <label>
-                Passing Year
-                <input name="passingYear" value={authData.passingYear} onChange={onChange} />
-              </label>
-              <label>
-                College
-                <input name="college" value={authData.college} onChange={onChange} />
-              </label>
-            </div>
+            {(authData.role === "student" || authData.role === "tpo") && (
+              <>
+                <div className="grid-2">
+                  <label>
+                    Year
+                    <input name="year" value={authData.year} onChange={onChange} />
+                  </label>
+                  <label>
+                    Branch
+                    <input name="branch" value={authData.branch} onChange={onChange} />
+                  </label>
+                </div>
+                <div className="grid-2">
+                  <label>
+                    Passing Year
+                    <input name="passingYear" value={authData.passingYear} onChange={onChange} />
+                  </label>
+                  <label>
+                    College
+                    <input name="college" value={authData.college} onChange={onChange} />
+                  </label>
+                </div>
+              </>
+            )}
+            {authData.role === "company" && (
+              <>
+                <label>Company Name</label>
+                <input name="companyName" value={authData.companyName || ""} onChange={onChange} />
+                <label>Company Website</label>
+                <input name="companyWebsite" value={authData.companyWebsite || ""} onChange={onChange} />
+                <label>Company Description</label>
+                <textarea name="companyDescription" value={authData.companyDescription || ""} onChange={onChange} />
+              </>
+            )}
           </>
         )}
 

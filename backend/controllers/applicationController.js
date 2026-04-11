@@ -39,11 +39,20 @@ exports.applyToOpportunity = async (req, res) => {
 
 exports.getApplications = async (req, res) => {
   try {
-    const applications = await Application.find()
+    let filter = {};
+
+    if (req.user.role === "company") {
+      const companyOpportunities = await Opportunity.find({
+        createdBy: req.user.id,
+      }).select("_id");
+      filter.opportunity = companyOpportunities.map((item) => item._id);
+    }
+
+    const applications = await Application.find(filter)
       .populate("student", "name email role year branch college")
       .populate(
         "opportunity",
-        "title company type location salary stipend duration",
+        "title company type location salary stipend duration createdBy",
       );
     res.json(applications);
   } catch (error) {

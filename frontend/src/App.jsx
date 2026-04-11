@@ -8,12 +8,17 @@ import {
   loginUser,
   registerUser,
   updateApplicationStatus,
+  updateProfile,
+  fetchUsers,
+  updateUser,
 } from "./api";
 import AuthForm from "./components/AuthForm.jsx";
 import OpportunityList from "./components/OpportunityList.jsx";
 import CreateOpportunityForm from "./components/CreateOpportunityForm.jsx";
 import ApplyForm from "./components/ApplyForm.jsx";
 import ApplicationList from "./components/ApplicationList.jsx";
+import ProfileForm from "./components/ProfileForm.jsx";
+import UserManagement from "./components/UserManagement.jsx";
 
 const defaultAuth = {
   name: "",
@@ -24,6 +29,9 @@ const defaultAuth = {
   branch: "",
   passingYear: "",
   college: "",
+  companyName: "",
+  companyWebsite: "",
+  companyDescription: "",
 };
 
 const defaultOpportunity = {
@@ -50,11 +58,14 @@ const defaultApply = {
 function App() {
   const [token, setToken] = useState(localStorage.getItem("placement_token") || "");
   const [user, setUser] = useState(null);
+  const [profileData, setProfileData] = useState(null);
+  const [profileEditing, setProfileEditing] = useState(false);
   const [mode, setMode] = useState("login");
   const [message, setMessage] = useState("");
   const [authData, setAuthData] = useState(defaultAuth);
   const [opportunities, setOpportunities] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [users, setUsers] = useState([]);
   const [newOpportunity, setNewOpportunity] = useState(defaultOpportunity);
   const [applyForm, setApplyForm] = useState(defaultApply);
   const [activeApply, setActiveApply] = useState(null);
@@ -82,6 +93,7 @@ function App() {
       setLoading(true);
       const data = await getCurrentUser(token);
       setUser(data);
+      setProfileData(data);
       localStorage.setItem("placement_token", token);
     } catch (error) {
       showMessage(error.message);
@@ -94,12 +106,17 @@ function App() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [ops, apps] = await Promise.all([
-        fetchOpportunities(token),
-        fetchApplications(token, user.role),
-      ]);
+      const promises = [fetchOpportunities(token), fetchApplications(token, user.role)];
+      if (user.role === "superadmin") {
+        promises.push(fetchUsers(token));
+      }
+
+      const [ops, apps, userList] = await Promise.all(promises);
       setOpportunities(ops);
       setApplications(apps);
+      if (user.role === "superadmin") {
+        setUsers(userList || []);
+      }
     } catch (error) {
       showMessage(error.message);
     } finally {
@@ -129,6 +146,44 @@ function App() {
       setToken(response.token);
       setAuthData(defaultAuth);
       showMessage("Logged in successfully");
+    } catch (error) {
+      showMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProfileChange = (event) => {
+    const { name, value } = event.target;
+    setProfileData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleProfileSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      setLoading(true);
+      const updated = await updateProfile(token, profileData);
+      setUser(updated);
+      setProfileData(updated);
+      setProfileEditing(false);
+      showMessage("Profile updated successfully");
+    } catch (error) {
+      showMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditToggle = () => {
+    setProfileEditing((prev) => !prev);
+  };
+
+  const handleRoleChange = async (userItem, role) => {
+    try {
+      setLoading(true);
+      const updated = await updateUser(token, userItem._id, { role });
+      setUsers((prev) => prev.map((item) => (item._id === updated._id ? updated : item)));
+      showMessage("User role updated successfully");
     } catch (error) {
       showMessage(error.message);
     } finally {
@@ -195,7 +250,13 @@ function App() {
   const handleStatusUpdate = async (application, status) => {
     try {
       setLoading(true);
-      const updated = await updateApplicationStatus(token, application._id, { status });
+      const offerLetter =
+        status === "shortlisted"
+          ? window.prompt("Enter offer letter text or URL (optional)", application.offerLetter || "") || ""
+          : undefined;
+      const payload = { status };
+      if (offerLetter !== undefined) payload.offerLetter = offerLetter;
+      const updated = await updateApplicationStatus(token, application._id, payload);
       setApplications((prev) => prev.map((item) => (item._id === updated._id ? updated : item)));
       showMessage("Status updated");
     } catch (error) {
@@ -231,6 +292,33 @@ function App() {
           />
         ) : (
           <>
+            <section className="card">
+              <h2>Dashboard</h2>
+              <div className="row-gap">
+                <span>Opportunities: {opportunities.length}</span>
+                <span>Applications: {applications.length}</span>
+                {user.role === "superadmin" && <span>Users: {users.length}</span>}
+              </div>
+              {user.role === "company" && <div className="item-row">Showing your posted opportunities only.</div>}
+              {user.role === "student" && <div className="item-row">Apply to roles and track your submissions.</div>}
+              {user.role === "tpo" && <div className="item-row">Manage opportunities and applications across the college.</div>}
+            </section>
+
+            {profileData && (
+              <ProfileForm
+                user={user}
+                profileData={profileData}
+                editing={profileEditing}
+                onChange={handleProfileChange}
+                onSubmit={handleProfileSubmit}
+                onEditToggle={handleEditToggle}
+              />
+            )}
+
+            {user.role === "superadmin" && (
+              <UserManagement users={users} onRoleChange={handleRoleChange} />
+            )}
+
             <OpportunityList opportunities={opportunities} userRole={user.role} onApply={openApply} />
             {user.role !== "student" && (
               <CreateOpportunityForm
