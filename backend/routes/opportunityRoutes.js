@@ -3,7 +3,9 @@ const router = express.Router();
 
 const {
   createOpportunity,
-  getOpportunities
+  getOpportunities,
+  deleteOpportunity,
+  updateOpportunity,
 } = require("../controllers/opportunityController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -24,6 +26,20 @@ router.get(
   "/",
   protect,
   getOpportunities
+);
+
+router.delete(
+  "/:id",
+  protect,
+  authorizeRoles("company", "tpo", "superadmin"),
+  deleteOpportunity
+);
+
+router.patch(
+  "/:id",
+  protect,
+  authorizeRoles("company", "tpo", "superadmin"),
+  updateOpportunity
 );
 
 module.exports = router;

@@ -6,6 +6,7 @@ const {
   getApplications,
   getStudentApplications,
   updateApplicationStatus,
+  uploadOfferLetter,
 } = require("../controllers/applicationController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -27,13 +28,21 @@ router.get(
   getStudentApplications,
 );
 
-router.get("/", protect, authorizeRoles("company", "tpo"), getApplications);
+router.get("/", protect, authorizeRoles("company", "tpo", "superadmin"), getApplications);
 
 router.patch(
   "/:id/status",
   protect,
-  authorizeRoles("company", "tpo"),
+  authorizeRoles("company", "tpo", "superadmin"),
   updateApplicationStatus,
+);
+
+router.post(
+  "/:id/offer-letter",
+  protect,
+  authorizeRoles("company", "tpo", "superadmin"),
+  upload.single("offerLetter"),
+  uploadOfferLetter,
 );
 
 module.exports = router;

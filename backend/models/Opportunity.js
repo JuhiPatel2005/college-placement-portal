@@ -17,7 +17,7 @@ const opportunitySchema = new mongoose.Schema({
   // 🔹 job or internship
   type: {
     type: String,
-    enum: ["job", "internship"],
+    enum: ["job", "placement", "internship"],
     required: true
   },
 

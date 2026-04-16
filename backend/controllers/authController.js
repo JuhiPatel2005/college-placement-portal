@@ -1,15 +1,8 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-
-const createToken = (user) =>
-  jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET || "secretkey",
-    { expiresIn: "1d" },
-  );
 
 const sanitizeUser = (user) => ({
+  _id: user._id,
   id: user._id,
   name: user.name,
   email: user.email,
@@ -31,7 +24,7 @@ exports.register = async (req, res) => {
       name,
       email,
       password,
-      role = "student",
+      role,
       year,
       branch,
       passingYear,
@@ -41,10 +34,10 @@ exports.register = async (req, res) => {
       companyDescription,
     } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !role) {
       return res
         .status(400)
-        .json({ message: "Name, email, and password are required" });
+        .json({ message: "Name, email, password, and role are required" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -68,8 +61,8 @@ exports.register = async (req, res) => {
       companyDescription,
     });
 
-    const token = createToken(user);
-    res.status(201).json({ token, user: sanitizeUser(user) });
+    req.session.user = { id: user._id.toString(), role: user.role };
+    res.status(201).json({ user: sanitizeUser(user) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -89,8 +82,8 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const token = createToken(user);
-    res.json({ token, user: sanitizeUser(user) });
+    req.session.user = { id: user._id.toString(), role: user.role };
+    res.json({ user: sanitizeUser(user) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -106,6 +99,16 @@ exports.getMe = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+exports.logout = async (req, res) => {
+  req.session.destroy((error) => {
+    if (error) {
+      return res.status(500).json({ message: "Unable to log out" });
+    }
+    res.clearCookie("connect.sid");
+    return res.json({ message: "Logged out successfully" });
+  });
 };
 
 exports.updateMe = async (req, res) => {
@@ -125,6 +128,16 @@ exports.updateMe = async (req, res) => {
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         updates[field] = req.body[field];
+      }
+    });
+
+    ["year", "passingYear"].forEach((field) => {
+      if (updates[field] === "" || updates[field] === null) {
+        delete updates[field];
+      } else if (updates[field] !== undefined) {
+        const n = Number(updates[field]);
+        if (!Number.isNaN(n)) updates[field] = n;
+        else delete updates[field];
       }
     });
 
