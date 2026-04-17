@@ -22,6 +22,7 @@ function ApplyForm({ applyForm, loading, onChange, onSubmit, onCancel }) {
           onChange={onChange}
           required
         />
+        
         <label>Skills</label>
         <input name="skills" value={applyForm.skills} onChange={onChange} />
         <label>Applied role</label>

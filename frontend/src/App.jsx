@@ -32,6 +32,8 @@ import ProfileSummary from "./components/ProfileSummary.jsx";
 import UserManagement from "./components/UserManagement.jsx";
 import AboutPage from "./components/AboutPage.jsx";
 import ContactPage from "./components/ContactPage.jsx";
+import PlacedStudents from "./components/PlacedStudents.jsx";
+import AdminOpportunitiesView from "./components/AdminOpportunitiesView.jsx";
 
 const defaultAuth = {
   name: "",
@@ -504,10 +506,6 @@ function AppContent() {
                   </div>
                 </section>
 
-                {user.role === "superadmin" && (
-                  <UserManagement users={users} onRoleChange={handleRoleChange} />
-                )}
-
                 <section className="card">
                   <h2>Job & Internship Opportunities</h2>
                   {user.role === "student" && (
@@ -685,8 +683,67 @@ function AppContent() {
             )
           } />
 
+
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+
+          {/* Admin/TPO Routes */}
+          <Route path="/admin/opportunities" element={
+            sessionPending ? (
+              <div className="dashboard">
+                <div className="message info">Restoring your session…</div>
+              </div>
+            ) : !user || (user.role !== "superadmin" && user.role !== "tpo") ? (
+              <Navigate to="/signin" replace />
+            ) : (
+              <div className="dashboard">
+                <AdminOpportunitiesView
+                  opportunities={opportunities}
+                  applications={applications}
+                  loading={loading}
+                  onDelete={handleDeleteOpportunity}
+                  onEdit={handleEditOpportunity}
+                />
+
+                <CreateOpportunityForm
+                  newOpportunity={newOpportunity}
+                  loading={loading}
+                  onChange={handleOpportunityChange}
+                  onSubmit={handleCreateOpportunity}
+                  isEditMode={Boolean(editingOpportunityId)}
+                  onCancelEdit={handleCancelEditOpportunity}
+                />
+              </div>
+            )
+          } />
+
+          <Route path="/admin/placed-students" element={
+            sessionPending ? (
+              <div className="dashboard">
+                <div className="message info">Restoring your session…</div>
+              </div>
+            ) : !user || (user.role !== "superadmin" && user.role !== "tpo") ? (
+              <Navigate to="/signin" replace />
+            ) : (
+              <div className="dashboard">
+                <PlacedStudents applications={applications} />
+              </div>
+            )
+          } />
+
+          <Route path="/admin/users" element={
+            sessionPending ? (
+              <div className="dashboard">
+                <div className="message info">Restoring your session…</div>
+              </div>
+            ) : !user || user.role !== "superadmin" ? (
+              <Navigate to="/signin" replace />
+            ) : (
+              <div className="dashboard">
+                <UserManagement users={users} onRoleChange={handleRoleChange} />
+              </div>
+            )
+          } />
         </Routes>
       </main>
 
@@ -699,7 +756,7 @@ function App() {
   return (
     <Router>
       <AppContent />
-      
+
     </Router>
   );
 }

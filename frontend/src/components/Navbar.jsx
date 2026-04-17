@@ -11,14 +11,23 @@ function Navbar({ user, currentPath, isLandingPage, onLogout, onNavClick }) {
       { label: "About", path: "/about", gateToSignIn: false },
       { label: "Contact", path: "/contact", gateToSignIn: false },
     ]
-    : [
-      ...(!user ? [{ label: "Home", path: "/", gateToSignIn: false }] : []),
-      { label: "Opportunities", path: "/opportunities", gateToSignIn: true },
-      { label: "Placements", path: "/placements", gateToSignIn: true },
-      ...(user ? [{ label: "Dashboard", path: "/dashboard", gateToSignIn: false }] : []),
-      { label: "About", path: "/about", gateToSignIn: false },
-      { label: "Contact", path: "/contact", gateToSignIn: false },
-    ];
+    : user?.role === "superadmin" || user?.role === "tpo"
+      ? [
+        { label: "Dashboard", path: "/dashboard", gateToSignIn: false },
+        { label: "Opportunities", path: "/admin/opportunities", gateToSignIn: true },
+        { label: "Placed Students", path: "/admin/placed-students", gateToSignIn: true },
+        { label: "Users", path: "/admin/users", gateToSignIn: true },
+        { label: "About", path: "/about", gateToSignIn: false },
+        { label: "Contact", path: "/contact", gateToSignIn: false },
+      ]
+      : [
+        ...(!user ? [{ label: "Home", path: "/", gateToSignIn: false }] : []),
+        { label: "Opportunities", path: "/opportunities", gateToSignIn: true },
+        { label: "Placements", path: "/placements", gateToSignIn: true },
+        ...(user ? [{ label: "Dashboard", path: "/dashboard", gateToSignIn: false }] : []),
+        { label: "About", path: "/about", gateToSignIn: false },
+        { label: "Contact", path: "/contact", gateToSignIn: false },
+      ];
 
   useEffect(() => {
     if (!isLandingPage) {
@@ -47,6 +56,9 @@ function Navbar({ user, currentPath, isLandingPage, onLogout, onNavClick }) {
     if (label === "Home") return currentPath === "/";
     if (label === "Dashboard") return currentPath === "/dashboard";
     if (label === "Applied") return currentPath === "/placements";
+    if (label === "Opportunities") return currentPath === "/opportunities" || currentPath === "/admin/opportunities";
+    if (label === "Placed Students") return currentPath === "/admin/placed-students";
+    if (label === "Users") return currentPath === "/admin/users";
     return currentPath === path;
   };
 
