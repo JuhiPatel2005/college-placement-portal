@@ -3083,3 +3083,19 @@ body {
 .button.small {
   padding: 10px 16px;
 }
+
+/* ===== ERROR MESSAGES ===== */
+.error {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: -12px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+input:invalid,
+select:invalid,
+textarea:invalid {
+  border-color: var(--accent);
+}

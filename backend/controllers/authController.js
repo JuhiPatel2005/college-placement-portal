@@ -34,13 +34,59 @@ exports.register = async (req, res) => {
       companyDescription,
     } = req.body;
 
+    // Enhanced validation
     if (!name || !email || !password || !role) {
       return res
         .status(400)
         .json({ message: "Name, email, password, and role are required" });
     }
 
-    const existingUser = await User.findOne({ email });
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters long" });
+    }
+
+    // Email format validation (additional check)
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid email address" });
+    }
+
+    // Role-specific validations
+    if (role === "student") {
+      if (year && (year < 1 || year > 4)) {
+        return res
+          .status(400)
+          .json({ message: "Year must be between 1 and 4" });
+      }
+      if (passingYear && (passingYear < 2020 || passingYear > 2030)) {
+        return res
+          .status(400)
+          .json({ message: "Passing year must be between 2020 and 2030" });
+      }
+    }
+
+    if (role === "company") {
+      if (!companyName) {
+        return res
+          .status(400)
+          .json({ message: "Company name is required for company role" });
+      }
+      if (companyWebsite) {
+        const urlRegex =
+          /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
+        if (!urlRegex.test(companyWebsite)) {
+          return res
+            .status(400)
+            .json({ message: "Please enter a valid company website URL" });
+        }
+      }
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -72,7 +118,21 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
+    }
+
+    // Email format validation
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid email address" });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
